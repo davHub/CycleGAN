@@ -1,5 +1,6 @@
 import numpy as np
 import cv2
+from matplotlib import pyplot as plt
 
 def save_img(filename, np_array):
     """Save an image
@@ -9,6 +10,17 @@ def save_img(filename, np_array):
         np_array: the image to save
     """
     cv2.imwrite("{}.png".format(filename),np_array)
+    
+def display(img):
+    """Display an image
+    
+    Args:
+        img: the image to display
+    """ 
+    im = np.uint8(img)
+    plt.imshow(im)
+    plt.axis('off')
+    plt.show()
 
 def resize(img, height=128, width=128):
     """Resize an 
