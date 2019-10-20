@@ -1,6 +1,7 @@
 import numpy as np
 import cv2
 from matplotlib import pyplot as plt
+import math
 
 def save_img(filename, np_array):
     """Save an image
@@ -9,7 +10,32 @@ def save_img(filename, np_array):
         filename: the file name
         np_array: the image to save
     """
-    cv2.imwrite("{}.png".format(filename),np_array)
+    cv2.imwrite("{}.png".format(filename), np_array)
+    
+def group_images(imgs, num_rows=2, num_columns=4):
+    """Group several images into one image
+    
+    Args:
+        imgs: images to group
+        num_rows: number of rows
+        num_columns: number of columns
+    """
+    number_of_missing_elements = num_columns * num_rows - len(imgs)
+    imgs = np.append(imgs,
+        np.zeros((number_of_missing_elements, *imgs[0].shape)).astype(imgs.dtype),
+        axis=0,
+    )
+    grid = np.concatenate(
+        [
+            np.concatenate(
+                imgs[index * num_columns : (index + 1) * num_columns], axis=1
+            )
+            for index in range(num_rows)
+        ],
+        axis=0,
+    )
+    return grid
+
     
 def display(img):
     """Display an image
