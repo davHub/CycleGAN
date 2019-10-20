@@ -11,7 +11,7 @@ import cv2
 tf.compat.v1.logging.set_verbosity(tf.compat.v1.logging.ERROR)
 
 
-def load_data(dir_A, dir_B, file_type='png'):
+def load_data(dir_A, dir_B, file_type=['png','jpg']):
     """ Load data images from 2 directories
     
     Args:
@@ -23,9 +23,13 @@ def load_data(dir_A, dir_B, file_type='png'):
         return  len(x.shape)<3 or (len(x.shape)==3 and x.shape[-1]<3)
     
     # Get data filename for both dataset A and B
-    files_A = glob.glob("{}/*.{}".format(dir_A, file_type))
+    files_A = []
+    for ft in file_type:
+        files_A += glob.glob("{}/*.{}".format(dir_A, ft))
     print("#> Dataset A from {}: {} data.".format(dir_A, len(files_A)))
-    files_B = glob.glob("{}/*.{}".format(dir_B, file_type))
+    files_B = []
+    for ft in file_type:
+        files_B += glob.glob("{}/*.{}".format(dir_B, ft))
     print("#> Dataset B from {}: {} data.".format(dir_B, len(files_B)))
 
     # Preprocess images loaded
