@@ -175,7 +175,7 @@ def main(args):
             saver = tf.train.Saver(max_to_keep=6)
 
         # Load data
-        data = load_data(args.dir_A, args.dir_B, file_type=args.file_type)
+        data = load_data(args.dir_A, args.dir_B)
         
         # Start training
         with tf.Session(graph=graph) as sess:
@@ -218,7 +218,7 @@ if __name__ == "__main__":
     # Define name save
     parser.add_argument('-m','--model', dest='model', default='CycleGAN', help='Model name')
     parser.add_argument('-s','--save_path', dest='save_path', default=os.getcwd(), help='Directory where to save all')
-    parser.add_argument('-f','--file_type', dest='file_type', default='png', help='File type (png ou jpg)')
+    # parser.add_argument('-f','--file_type', dest='file_type', default='jpg', help='File type (png ou jpg)')
     # Params for training
     parser.add_argument('-e','--nb_epochs', dest='nb_epochs', type=int, default=100, help='Nb epochs for training')
     parser.add_argument('-sf','--save_freq', dest='save_freq', type=int, default=10, help="Saving model every 'save_freq' epochs")
