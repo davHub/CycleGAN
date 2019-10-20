@@ -239,15 +239,15 @@ class CycleGAN():
             self.dis_B = PatchGAN(name="disB")
 
             # Outputs of the discriminators for real images
-            dis_A_real = self.dis_A.forward(self.A_real, reuse=False)
-            dis_B_real = self.dis_B.forward(self.B_real, reuse=False)
+            self.dis_A_real = self.dis_A.forward(self.A_real, reuse=False)
+            self.dis_B_real = self.dis_B.forward(self.B_real, reuse=False)
 
             # Outputs of the discriminators for fake image
-            dis_A_fake = self.dis_A.forward(self.A_fake, reuse=True)
-            dis_A_fake_buff = self.dis_A.forward(self.A_fake_buff, reuse=True)
+            self.dis_A_fake = self.dis_A.forward(self.A_fake, reuse=True)
+            self.dis_A_fake_buff = self.dis_A.forward(self.A_fake_buff, reuse=True)
             
-            dis_B_fake = self.dis_B.forward(self.B_fake, reuse=True)
-            dis_B_fake_buff = self.dis_B.forward(self.B_fake_buff, reuse=True)
+            self.dis_B_fake = self.dis_B.forward(self.B_fake, reuse=True)
+            self.dis_B_fake_buff = self.dis_B.forward(self.B_fake_buff, reuse=True)
 
             def adv_loss(logits, labels):
                 return tf.reduce_mean(tf.nn.sigmoid_cross_entropy_with_logits(logits=logits, labels=labels))
