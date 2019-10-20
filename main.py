@@ -198,7 +198,7 @@ def main(args):
         save_name = os.path.join(model_path, args.model)    
 
         # Create necessary directories
-        if not os.path.exists(model_path): raise FileNotFoundError("Model not found")            
+        if not os.path.exists(save_name): raise FileNotFoundError("Model not found")            
         if not os.path.exists(test_path): os.makedirs(test_path)            
      
         # Start testing
