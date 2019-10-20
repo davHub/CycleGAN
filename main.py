@@ -72,6 +72,11 @@ def train(sess, model, train_data, saver, tot_epochs=200, save_freq=10, test_fre
         raise ValueError()
     print("#> Number of batches {}".format(num_batches))
     
+    # Get image to test and analyse training 
+    n_test=8
+    test_A = train_data['A'][0:n_test]
+    test_B = train_data['B'][0:n_test]
+    
     start_time = time.time()
     for epoch in range(tot_epochs):
         # Shuffle datasets
@@ -109,9 +114,9 @@ def train(sess, model, train_data, saver, tot_epochs=200, save_freq=10, test_fre
         # Test model every 'test_freq' epochs  
         if (epoch+1) % test_freq == 0:
             print('#> Testing')
-            gen_AB, gen_BA = sess.run([model.B_fake, model.A_fake], feed_dict={ model.A_real: train_A, model.B_real: train_B })
-            save_img(os.path.join(train_path,"genAB_ep{}".format(epoch)), deprocess(gen_AB[0]))
-            save_img(os.path.join(train_path,"genBA_ep{}".format(epoch)), deprocess(gen_BA[0]))
+            gen_AB, gen_BA = sess.run([model.B_fake, model.A_fake], feed_dict={ model.A_real: test_A, model.B_real: test_B })
+            save_img(os.path.join(train_path,"genAB_ep{}".format(epoch)), group_images(deprocess(gen_AB)))
+            save_img(os.path.join(train_path,"genBA_ep{}".format(epoch)), group_images(deprocess(gen_BA)))
 
         # Save model every 'save_freq' epochs  
         if (epoch+1) % save_freq == 0:
@@ -157,8 +162,18 @@ def main(args):
     if not os.path.exists(args.save_path):
         os.makedirs(args.save_path)
     
+    # Build the graph            
+    print("#> Building graph model")
+    graph = tf.Graph()
+    with graph.as_default():
+        cycGAN = CycleGAN(img_shape=[args.resize,args.resize,3], color_reg=args.color_reg, testing=args.testing)
+        saver = tf.train.Saver(max_to_keep=6)
+        
+    # Load data
+    data = load_data(args.dir_A, args.dir_B, resize_dim=args.resize)
+        
     if (not args.testing):
-        # Create path
+        # Create pathfor training
         model_path = os.path.join(args.save_path, "model")        
         train_path = os.path.join(args.save_path, "train")
         t_board_path = os.path.join(args.save_path, "logs")
@@ -169,16 +184,6 @@ def main(args):
         if not os.path.exists(train_path): os.makedirs(train_path)            
         if not os.path.exists(t_board_path): os.makedirs(t_board_path)
             
-        # Build the graph            
-        print("#> Building graph model")
-        graph = tf.Graph()
-        with graph.as_default():
-            cycGAN = CycleGAN()
-            saver = tf.train.Saver(max_to_keep=6)
-
-        # Load data
-        data = load_data(args.dir_A, args.dir_B, resize_dim=args.resize)
-        
         # Start training
         with tf.Session(graph=graph) as sess:
             print("#> Training model")
@@ -187,7 +192,7 @@ def main(args):
                   save_name=save_name, train_path=train_path,t_board_path=t_board_path)
             
     else:
-        # Create path
+        # Create path testing
         model_path = os.path.join(args.save_path, "model")  
         test_path = os.path.join(args.save_path, "test")
         save_name = os.path.join(model_path, args.model)    
@@ -195,16 +200,7 @@ def main(args):
         # Create necessary directories
         if not os.path.exists(model_path): raise FileNotFoundError("Model not found")            
         if not os.path.exists(test_path): os.makedirs(test_path)            
-        
-        # Build the graph            
-        graph = tf.Graph()        
-        with graph.as_default():
-            cycGAN = CycleGAN(training=False)
-            saver = tf.train.Saver(max_to_keep=6)
-            
-        # Load data
-        data = load_data(args.dir_A, args.dir_B, file_type=args.file_type)
-
+     
         # Start testing
         with tf.Session(graph=graph) as sess:
             print("#> Testing model")
@@ -228,6 +224,7 @@ if __name__ == "__main__":
     parser.add_argument('-tf','--test_freq', dest='test_freq', type=int, default=5, help="Testing model every 'test_freq' epochs")
     parser.add_argument('-lf','--log_freq', dest='log_freq', type=int, default=100, help="Displaying training log every 'log_freq' steps")
     # If defined, test a model
-    parser.add_argument("--testing", help="If defined, do not train but test the model defined", action="store_true")
+    parser.add_argument("--testing", help="If defined, do not train but test the model defined.", action="store_true")
+    parser.add_argument("--color_reg", help="If defined, add the color regularization.", action="store_true")
     args = parser.parse_args()
     main(args)

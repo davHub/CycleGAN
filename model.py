@@ -192,7 +192,7 @@ class CycleGAN():
     
     The CycleGAN model is a model from the paper Unpaired Image-to-Image Translation using Cycle-Consistent Adversarial Networks.
     """
-    def __init__(self, img_shape=[128, 128, 3], learning_rate=0.0002, beta1=0.999, color_reg=False, training=True):
+    def __init__(self, img_shape=[128, 128, 3], learning_rate=0.0002, beta1=0.999, color_reg=False, testing=False):
         """ Initialize a CycleGAN class.
         
         Args:
@@ -216,11 +216,11 @@ class CycleGAN():
         
         self.A_fake_buff = tf.compat.v1.placeholder(tf.float32, shape=[None]+img_shape, name="pl_A_fake")
         self.B_fake_buff = tf.compat.v1.placeholder(tf.float32, shape=[None]+img_shape, name="pl_B_fake")
-        
 
         # Create generators
-        self.genA2B = Generator(name="genA2B")
-        self.genB2A = Generator(name="genB2A")
+        nb_res_block= 9 if img_shape[0]>200 else 6
+        self.genA2B = Generator(nb_res_block=nb_res_block, name="genA2B")
+        self.genB2A = Generator(nb_res_block=nb_res_block, name="genB2A")
 
         # Outputs of the generators
         self.B_fake = self.genA2B.forward(self.A_real, reuse=False)
@@ -230,9 +230,9 @@ class CycleGAN():
         self.A_cyc = self.genB2A.forward(self.B_fake, reuse=True)
         self.B_cyc = self.genA2B.forward(self.A_fake, reuse=True)
 
-        if training:
-            self.buffer_fake_A = deque(maxlen=1)
-            self.buffer_fake_B = deque(maxlen=1)
+        if not testing:
+            self.buffer_fake_A = deque(maxlen=50)
+            self.buffer_fake_B = deque(maxlen=50)
             
             # Create and display discriminators
             self.dis_A = PatchGAN(name="disA")
@@ -250,7 +250,7 @@ class CycleGAN():
             self.dis_B_fake_buff = self.dis_B.forward(self.B_fake_buff, reuse=True)
 
             # def adv_loss(logits, labels):
-                # return tf.reduce_mean(tf.nn.sigmoid_cross_entropy_with_logits(logits=logits, labels=labels))
+            #   return tf.reduce_mean(tf.nn.sigmoid_cross_entropy_with_logits(logits=logits, labels=labels))
 
             def adv_loss(values, target):
                 return tf.reduce_mean((values-target)**2)
