@@ -253,7 +253,7 @@ class CycleGAN():
                 # return tf.reduce_mean(tf.nn.sigmoid_cross_entropy_with_logits(logits=logits, labels=labels))
 
             def adv_loss(values, target):
-                tf.reduce_mean((values-target)**2)
+                return tf.reduce_mean((values-target)**2)
 
             def abs_loss(values, target):
                 return tf.reduce_mean(tf.abs(values - target))
