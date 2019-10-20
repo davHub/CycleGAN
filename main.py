@@ -91,7 +91,7 @@ def train(sess, model, train_data, saver, tot_epochs=200, save_freq=10, test_fre
            
             # Update discriminators params
             _, dis_loss = sess.run([model.dis_optim, model.dis_loss], feed_dict={ model.A_real: train_A, model.B_real: train_B,
-                                                                                  model.A_fake_buff: train_A, model.B_fake_buff: train_B})
+                                                                                    model.A_fake_buff: train_A, model.B_fake_buff: train_B})
 
             # Display log every 'log_freq' steps  
             if (step+1) % log_freq == 0:
@@ -218,7 +218,7 @@ if __name__ == "__main__":
     parser.add_argument('-e','--nb_epochs', dest='nb_epochs', type=int, default=100, help='Nb epochs for training')
     parser.add_argument('-sf','--save_freq', dest='save_freq', type=int, default=10, help="Saving model every 'save_freq' epochs")
     parser.add_argument('-tf','--test_freq', dest='test_freq', type=int, default=5, help="Testing model every 'test_freq' epochs")
-    parser.add_argument('-lf','--log_freq', dest='log_freq', type=int, default=20, help="Displaying training log every 'log_freq' steps")
+    parser.add_argument('-lf','--log_freq', dest='log_freq', type=int, default=100, help="Displaying training log every 'log_freq' steps")
     # If defined, test a model
     parser.add_argument("--testing", help="If defined, do not train but test the model defined", action="store_true")
     args = parser.parse_args()

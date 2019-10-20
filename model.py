@@ -245,6 +245,8 @@ class CycleGAN():
 
             # Discriminator loss similar to the paper --> E_y{ (1 - D(y))^2 } + E_x{ D(G(x))^2 }
             # factor 0.5 to slow down D learning
+            
+            
             self.dis_A_loss = 0.5*(reduce_mean_squared(1.-dis_A_real) + reduce_mean_squared(dis_A_fake_buff))
             self.dis_B_loss = 0.5*(reduce_mean_squared(1.-dis_B_real) + reduce_mean_squared(dis_B_fake_buff))
 
