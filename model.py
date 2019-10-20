@@ -153,7 +153,7 @@ class Generator(NeuralNetwork):
             k: the number of filters
         """
         with tf.variable_scope(name):
-            x = tf.layers.conv2d_transpose(x, k, kernel_size=3, strides=(2, 2), padding='SAME', kernel_initializer=tf.truncated_normal_initializer(stddev=0.02))
+            x = tf.layers.conv2d_transpose(inputs, k, kernel_size=3, strides=(2, 2), padding='SAME', kernel_initializer=tf.truncated_normal_initializer(stddev=0.02))
             x = tf.layers.batch_normalization(x, name='batch_norm')
             x = tf.nn.relu(x)
             return x

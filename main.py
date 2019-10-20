@@ -11,7 +11,7 @@ import cv2
 tf.compat.v1.logging.set_verbosity(tf.compat.v1.logging.ERROR)
 
 
-def load_data(dir_A, dir_B, file_type=['png','jpg']):
+def load_data(dir_A, dir_B, file_type=['png','jpg'], resize_dim=128):
     """ Load data images from 2 directories
     
     Args:
@@ -33,8 +33,8 @@ def load_data(dir_A, dir_B, file_type=['png','jpg']):
     print("#> Dataset B from {}: {} data.".format(dir_B, len(files_B)))
 
     # Preprocess images loaded
-    data_A = [preprocess(resize(cv2.imread(f_name, cv2.IMREAD_COLOR))) for f_name in files_A]
-    data_B = [preprocess(resize(cv2.imread(f_name, cv2.IMREAD_COLOR))) for f_name in files_B]
+    data_A = [preprocess(resize(cv2.imread(f_name, cv2.IMREAD_COLOR), height=resize_dim, width=resize_dim)) for f_name in files_A]
+    data_B = [preprocess(resize(cv2.imread(f_name, cv2.IMREAD_COLOR), height=resize_dim, width=resize_dim)) for f_name in files_B]
 
     # keep only non-grayscale images
     data_A = [x for x in data_A if not gray_scale(x)]    
@@ -220,7 +220,7 @@ if __name__ == "__main__":
     parser.add_argument('-s','--save_path', dest='save_path', default=os.getcwd(), help='Directory where to save all')
     # parser.add_argument('-f','--file_type', dest='file_type', default='jpg', help='File type (png ou jpg)')
     # Params for training
-    parser.add_argument('-e','--nb_epochs', dest='nb_epochs', type=int, default=100, help='Nb epochs for training')
+    parser.add_argument('-e','--nb_epochs', dest='nb_epochs', type=int, default=200, help='Nb epochs for training')
     parser.add_argument('-sf','--save_freq', dest='save_freq', type=int, default=10, help="Saving model every 'save_freq' epochs")
     parser.add_argument('-tf','--test_freq', dest='test_freq', type=int, default=5, help="Testing model every 'test_freq' epochs")
     parser.add_argument('-lf','--log_freq', dest='log_freq', type=int, default=100, help="Displaying training log every 'log_freq' steps")
