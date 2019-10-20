@@ -85,13 +85,14 @@ def train(sess, model, train_data, saver, tot_epochs=200, save_freq=10, test_fre
             if len(train_B.shape)<4: train_B = [train_B]
                             
             # We update generators params
-            _, gen_loss, A_fake, B_fake = sess.run([model.gen_optim, model.gen_loss, model.A_fake, model.B_fake], feed_dict={ model.A_real: train_A, model.B_real: train_B })
+            _, gen_loss, A_fake, B_fake = sess.run([model.gen_optim, model.gen_loss, model.A_fake, model.B_fake], feed_dict={ model.A_real: train_A, model.B_real: train_B, model.lr_pl: model.lr })
             model.buffer_fake_A.append(A_fake)
             model.buffer_fake_B.append(B_fake)
            
             # Update discriminators params
-            _, dis_loss = sess.run([model.dis_optim, model.dis_loss], feed_dict={ model.A_real: train_A, model.B_real: train_B,
-                                                                                    model.A_fake_buff: train_A, model.B_fake_buff: train_B})
+            _, dis_loss = sess.run([model.dis_optim, model.dis_loss], feed_dict={   model.A_real: train_A, model.B_real: train_B,
+                                                                                    model.A_fake_buff: train_A, model.B_fake_buff: train_B,
+                                                                                    model.lr_pl: model.lr})
 
             # Display log every 'log_freq' steps  
             if (step+1) % log_freq == 0:
