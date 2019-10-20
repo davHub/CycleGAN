@@ -68,6 +68,8 @@ def train(sess, model, train_data, saver, tot_epochs=200, save_freq=10, test_fre
 
     # Calculate number of batches by epoch (size of batch 1 --> size min of the datasets)
     num_batches = min(len(train_data['A']), len(train_data['B']))
+    if num_batches==0:
+        raise ValueError()
     print("#> Number of batches {}".format(num_batches))
     
     start_time = time.time()
@@ -175,7 +177,7 @@ def main(args):
             saver = tf.train.Saver(max_to_keep=6)
 
         # Load data
-        data = load_data(args.dir_A, args.dir_B)
+        data = load_data(args.dir_A, args.dir_B, resize_dim=args.resize)
         
         # Start training
         with tf.Session(graph=graph) as sess:
@@ -218,6 +220,7 @@ if __name__ == "__main__":
     # Define name save
     parser.add_argument('-m','--model', dest='model', default='CycleGAN', help='Model name')
     parser.add_argument('-s','--save_path', dest='save_path', default=os.getcwd(), help='Directory where to save all')
+    parser.add_argument('-r','--resize', dest='resize', type=int, default=128, help="Dimension of the data")
     # parser.add_argument('-f','--file_type', dest='file_type', default='jpg', help='File type (png ou jpg)')
     # Params for training
     parser.add_argument('-e','--nb_epochs', dest='nb_epochs', type=int, default=200, help='Nb epochs for training')

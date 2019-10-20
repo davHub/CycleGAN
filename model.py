@@ -231,8 +231,8 @@ class CycleGAN():
         self.B_cyc = self.genA2B.forward(self.A_fake, reuse=True)
 
         if training:
-            self.buffer_fake_A = deque(maxlen=50)
-            self.buffer_fake_B = deque(maxlen=50)
+            self.buffer_fake_A = deque(maxlen=1)
+            self.buffer_fake_B = deque(maxlen=1)
             
             # Create and display discriminators
             self.dis_A = PatchGAN(name="disA")
@@ -249,8 +249,11 @@ class CycleGAN():
             self.dis_B_fake = self.dis_B.forward(self.B_fake, reuse=True)
             self.dis_B_fake_buff = self.dis_B.forward(self.B_fake_buff, reuse=True)
 
-            def adv_loss(logits, labels):
-                return tf.reduce_mean(tf.nn.sigmoid_cross_entropy_with_logits(logits=logits, labels=labels))
+            # def adv_loss(logits, labels):
+                # return tf.reduce_mean(tf.nn.sigmoid_cross_entropy_with_logits(logits=logits, labels=labels))
+
+            def adv_loss(values, target):
+                tf.reduce_mean((values-target)**2)
 
             def abs_loss(values, target):
                 return tf.reduce_mean(tf.abs(values - target))
