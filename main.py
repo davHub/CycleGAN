@@ -178,6 +178,7 @@ def main(args):
         train_path = os.path.join(args.save_path, "train")
         t_board_path = os.path.join(args.save_path, "logs")
         save_name = os.path.join(model_path, args.model)    
+        restore_name = os.path.join(model_path, args.restore)    
 
         # Create necessary directories
         if not os.path.exists(model_path): os.makedirs(model_path)
@@ -189,13 +190,13 @@ def main(args):
             print("#> Training model")
             train(sess, cycGAN, data, saver, tot_epochs=args.nb_epochs,
                   save_freq=args.save_freq, test_freq=args.test_freq, log_freq=args.log_freq,
-                  save_name=save_name, train_path=train_path,t_board_path=t_board_path)
+                  save_name=save_name, train_path=train_path,t_board_path=t_board_path, model_path=restore_name)
             
     else:
         # Create path testing
         model_path = os.path.join(args.save_path, "model")  
         test_path = os.path.join(args.save_path, "test")
-        save_name = os.path.join(model_path, args.model)    
+        restore_name = os.path.join(model_path, args.restore)    
 
         # Create necessary directories
         if not os.path.exists("{}".format(model_path)): raise FileNotFoundError("Model {} : not found".format(save_name))            
@@ -204,7 +205,7 @@ def main(args):
         # Start testing
         with tf.Session(graph=graph) as sess:
             print("#> Testing model")
-            test( sess, cycGAN, data, saver, num_test=15, test_path=test_path, model_path=save_name)
+            test( sess, cycGAN, data, saver, num_test=15, test_path=test_path, model_path=restore_name)
           
     
 
@@ -214,11 +215,12 @@ if __name__ == "__main__":
     parser.add_argument('-dA','--dir_A', dest='dir_A', default='dataset_A', help='Directory name where A images are saved')
     parser.add_argument('-dB','--dir_B', dest='dir_B', default='dataset_B', help='Directory name where B images are saved')
     # Define name save
+    parser.add_argument('--restore', dest='restore', default=None, help='Model to restore')
     parser.add_argument('-m','--model', dest='model', default='CycleGAN', help='Model name')
     parser.add_argument('-s','--save_path', dest='save_path', default=os.getcwd(), help='Directory where to save all')
     parser.add_argument('-r','--resize', dest='resize', type=int, default=128, help="Dimension of the data")
-    # parser.add_argument('-f','--file_type', dest='file_type', default='jpg', help='File type (png ou jpg)')
     # Params for training
+    parser.add_argument('-n','--norm', dest='norm', default='instance', help='Normalization to use')
     parser.add_argument('-e','--nb_epochs', dest='nb_epochs', type=int, default=200, help='Nb epochs for training')
     parser.add_argument('-sf','--save_freq', dest='save_freq', type=int, default=10, help="Saving model every 'save_freq' epochs")
     parser.add_argument('-tf','--test_freq', dest='test_freq', type=int, default=5, help="Testing model every 'test_freq' epochs")

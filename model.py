@@ -203,7 +203,7 @@ class CycleGAN():
     
     The CycleGAN model is a model from the paper Unpaired Image-to-Image Translation using Cycle-Consistent Adversarial Networks.
     """
-    def __init__(self, img_shape=[128, 128, 3], learning_rate=0.0002, beta1=0.999, color_reg=False, testing=False):
+    def __init__(self, img_shape=[128, 128, 3], learning_rate=0.0002, beta1=0.999, norm='instance', color_reg=False, testing=False):
         """ Initialize a CycleGAN class.
         
         Args:
@@ -230,8 +230,8 @@ class CycleGAN():
 
         # Create generators
         nb_res_block= 9 if img_shape[0]>200 else 6
-        self.genA2B = Generator(nb_res_block=nb_res_block, name="genA2B")
-        self.genB2A = Generator(nb_res_block=nb_res_block, name="genB2A")
+        self.genA2B = Generator(nb_res_block=nb_res_block, norm=norm, name="genA2B")
+        self.genB2A = Generator(nb_res_block=nb_res_block, norm=norm, name="genB2A")
 
         # Outputs of the generators
         self.B_fake = self.genA2B.forward(self.A_real, reuse=False)
@@ -246,8 +246,8 @@ class CycleGAN():
             self.buffer_fake_B = deque(maxlen=50)
             
             # Create and display discriminators
-            self.dis_A = PatchGAN(name="disA")
-            self.dis_B = PatchGAN(name="disB")
+            self.dis_A = PatchGAN(norm=norm, name="disA")
+            self.dis_B = PatchGAN(norm=norm, name="disB")
 
             # Outputs of the discriminators for real images
             self.dis_A_real = self.dis_A.forward(self.A_real, reuse=False)
