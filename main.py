@@ -212,14 +212,14 @@ if __name__ == "__main__":
     parser.add_argument('-dA', '--dir_A', dest='dir_A', default='dataset_A', help='Directory name where A images are saved')
     parser.add_argument('-dB', '--dir_B', dest='dir_B', default='dataset_B', help='Directory name where B images are saved')
     # Define name save
-    parser.add_argument('--restore', dest='restore', default=None, help='Model to restore')
     parser.add_argument('-m', '--model', dest='model', default='CycleGAN', help='Model name')
     parser.add_argument('-s', '--save_path', dest='save_path', default=os.getcwd(), help='Directory where to save all')
-    parser.add_argument('--load_size', dest='load_size', type=int, default=286, help="Dimension of the data before cropping")
-    parser.add_argument('--fine_size', dest='fine_size', type=int, default=256, help="Dimension of the data")
+    parser.add_argument('--restore', dest='restore', default=None, help='Model to restore')
     # Params to change training parameters
     parser.add_argument('-e', '--nb_epochs', dest='nb_epochs', type=int, default=200, help='Nb epochs for training')
     parser.add_argument('-n', '--norm', dest='norm', default='instance', help='Normalization to use')
+    parser.add_argument('--fine_size', dest='fine_size', type=int, default=256, help="Dimension of the data")
+    parser.add_argument('--load_size', dest='load_size', type=int, default=286, help="Dimension of the data before cropping")
     parser.add_argument("--color_reg", help="If defined, add the color regularization.", action="store_true")
     # Params for training config
     parser.add_argument('-sf', '--save_freq', dest='save_freq', type=int, default=10, help="Saving model every 'save_freq' epochs")

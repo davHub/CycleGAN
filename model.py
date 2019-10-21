@@ -354,8 +354,8 @@ class CycleGAN():
         n_test=8
         random.shuffle(train_data['A']) 
         random.shuffle(train_data['B'])
-        test_A = train_data['A'][:n_test]
-        test_B = train_data['B'][:n_test]
+        test_A = [crop(im, width=self.img_shape[0], height=self.img_shape[0]) for im in train_data['A'][:n_test]]
+        test_B = [crop(im, width=self.img_shape[0], height=self.img_shape[0]) for im in train_data['B'][:n_test]]
 
         start_time = time.time()
         for epoch in range(tot_epochs):

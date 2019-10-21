@@ -96,6 +96,9 @@ def deprocess(np_array):
     """
     return np.uint8(process(np_array, x_inf=-1., x_sup=1., y_inf=0., y_sup=255.))
 
+def crop(img, width=256, height=256):
+    return img[:height,:width]
+
 def make_noisy(img, crop_size=256, blur=6, std_bright=.2):
     """Modify data (Data augmentation trick)
      
