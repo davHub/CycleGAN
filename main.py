@@ -168,6 +168,7 @@ def main(args):
     with graph.as_default():
         cycGAN = CycleGAN(img_shape=[args.resize,args.resize,3], color_reg=args.color_reg, testing=args.testing)
         saver = tf.train.Saver(max_to_keep=6)
+        global_step = 0        
         
     # Load data
     data = load_data(args.dir_A, args.dir_B, resize_dim=args.resize)
