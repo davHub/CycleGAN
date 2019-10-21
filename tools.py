@@ -1,8 +1,9 @@
-import numpy as np
 import cv2
+import math
+import glob
+import numpy as np
 from matplotlib import pyplot as plt
 import matplotlib.image as mpimg
-import math
 
 def save_img(filename, np_array):
     """Save an image
@@ -125,3 +126,36 @@ def make_noisy(img, crop_size=256, blur=6, std_bright=.2):
     if np.random.random() > 0.5:
         new_img = np.fliplr(new_img)    
     return new_img
+
+
+def load_data(dir_A, dir_B, file_type=['png', 'jpg'], resize_dim=128):
+    """ Load data images from 2 directories
+
+    Args:
+        dir_A: directory of the dataset A
+        dir_B: directory of the dataset B
+        file_type: type of the image files ('png', 'jpg' or 'gif')
+    """
+    def gray_scale(x):
+        return len(x.shape) < 3 or (len(x.shape) == 3 and x.shape[-1] < 3)
+
+    # Get data filename for both dataset A and B
+    files_A = []
+    for ft in file_type:
+        files_A += glob.glob("{}/*.{}".format(dir_A, ft))
+    print("#> Dataset A from {}: {} data.".format(dir_A, len(files_A)))
+    files_B = []
+    for ft in file_type:
+        files_B += glob.glob("{}/*.{}".format(dir_B, ft))
+    print("#> Dataset B from {}: {} data.".format(dir_B, len(files_B)))
+
+    # Preprocess images loaded
+    data_A = [preprocess(resize(
+        read_img(f_name), height=resize_dim, width=resize_dim)) for f_name in files_A]
+    data_B = [preprocess(resize(
+        read_img(f_name), height=resize_dim, width=resize_dim)) for f_name in files_B]
+
+    # keep only non-grayscale images
+    data_A = [x for x in data_A if not gray_scale(x)]
+    data_B = [x for x in data_B if not gray_scale(x)]
+    return {"A": data_A, "B": data_B}

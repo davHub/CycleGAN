@@ -1,5 +1,10 @@
+import time
+import os
+import random
 import tensorflow as tf
 from collections import deque
+
+from tools import *
 from ops import instance_norm, batch_norm
 from image_buff import ImageBuffer
 
@@ -218,6 +223,7 @@ class CycleGAN():
         self.lambda_cyc = 10.
         self.lambda_color = 0.5*self.lambda_cyc
         
+        self.img_shape = img_shape
         self.lr = learning_rate
         self.beta1 = beta1
 
@@ -314,3 +320,114 @@ class CycleGAN():
         """
         self.lr = min(self.lr - x,0)
         
+    def train(self, sess, train_data, saver, tot_epochs=200, save_freq=10, test_freq=5, log_freq=20, save_name="model", train_path="./",t_board_path="./", model_path=None):
+        """ Train a model
+    
+        Args:
+            sess: tensorflow session
+            train_data: dataset
+            saver: tf.Saver instance
+            tot_epochs: number of epochs to train the model
+            save_freq: the frequency of saving model
+            test_freq: the frequency of testing the model
+            log_freq: the frequency of logging training info
+            save_name: the name of the model to be saved
+            train_path: the path to the train directory (used to print data)
+            t_board_path: not used        
+            model_path: the path to a pretrained model
+        """
+        # Initialise model weights thanks to either random or pretrained values
+        global_step = 0
+        if model_path is None:
+            sess.run(tf.global_variables_initializer())
+        else:
+            # saver.restore(sess, tf.train.latest_checkpoint(save_name))
+            saver.restore(sess, model_path)
+
+        # Calculate number of batches by epoch (size of batch 1 --> size min of the datasets)
+        num_batches = min(len(train_data['A']), len(train_data['B']))
+        if num_batches==0:
+            raise ValueError()
+        print("#> Number of batches {}".format(num_batches))
+
+        # Get image to test and analyse training 
+        n_test=8
+        random.shuffle(train_data['A']) 
+        random.shuffle(train_data['B'])
+        test_A = train_data['A'][:n_test]
+        test_B = train_data['B'][:n_test]
+
+        start_time = time.time()
+        for epoch in range(tot_epochs):
+            # Shuffle datasets
+            random.shuffle(train_data["A"])
+            random.shuffle(train_data["B"])
+
+            # Decay learning rate similarly than in the paper
+            if epoch > tot_epochs//2:
+                decay = self.lr/(tot_epochs//2)
+                self.decrease_lr(decay)
+
+            for step in range(num_batches):
+                # Get next batch
+                train_A = make_noisy(train_data['A'][step], crop_size=self.img_shape[0])
+                train_B = make_noisy(train_data['B'][step], crop_size=self.img_shape[0])
+
+                if len(train_A.shape)<4: train_A = [train_A]
+                if len(train_B.shape)<4: train_B = [train_B]
+
+                # We update generators params
+                _, gen_loss, A_fake, B_fake = sess.run([self.gen_optim, self.gen_loss, self.A_fake, self.B_fake], feed_dict={ self.A_real: train_A, self.B_real: train_B, self.lr_pl: self.lr })
+
+                # Update discriminators params
+                _, dis_loss = sess.run([self.dis_optim, self.dis_loss], feed_dict={   self.A_real: train_A, self.B_real: train_B,
+                                                                                        self.A_fake_buff: self.buffer_fake_A(A_fake), self.B_fake_buff: self.buffer_fake_B(B_fake),
+                                                                                        self.lr_pl: self.lr})
+
+                # Display log every 'log_freq' steps  
+                if (step+1) % log_freq == 0:
+                    time_now = time.time()
+                    t_since_start = (time_now-start_time)/60
+                    print("#> Ep {} Step {}/{} - ({:3.4}min) -- Losses dis({:.6})  gen({:.6})".format(epoch, step+1, num_batches,t_since_start, dis_loss, gen_loss))
+
+            # Test model every 'test_freq' epochs  
+            if (epoch+1) % test_freq == 0:
+                print('#> Testing')
+                gen_AB, gen_BA = sess.run([self.B_fake, self.A_fake], feed_dict={ self.A_real: test_A, self.B_real: test_B })
+                save_img(os.path.join(train_path,"genAB_ep{}".format(epoch)), group_images(deprocess(gen_AB)))
+                save_img(os.path.join(train_path,"genBA_ep{}".format(epoch)), group_images(deprocess(gen_BA)))
+
+            # Save model every 'save_freq' epochs  
+            if (epoch+1) % save_freq == 0:
+                print("#> Saving self")
+                saver.save(sess, save_name, global_step=global_step)
+
+            global_step = global_step + 1   
+            
+    def test(self, sess, test_data, saver, num_test=10, test_path="./", model_path=None):
+        """ Test a model
+    
+        Args:
+            sess: tensorflow session
+            test_data: the dataset
+            saver: the saver
+            num_test: number of data from test dataset to use for testing
+            test_path: the path to the test directory (used to print test results)
+            model_path: the path to the trained model
+        """
+        saver.restore(sess, model_path)
+
+        random.shuffle(test_data["A"]) 
+        random.shuffle(test_data["B"])
+        num_test = min(min(len(test_data["A"]), len(test_data["B"])),num_test)
+        test_A, test_B = [test_data['A'][:num_test], test_data['B'][:num_test]]
+        if len(np.array(test_A).shape)<4: test_A = [test_A]
+        if len(np.array(test_B).shape)<4: test_B = [test_B]
+
+        A_fake, B_fake, A_cyc, B_cyc = sess.run([self.A_fake, self.B_fake, self.A_cyc, self.B_cyc], feed_dict={ self.A_real: test_A, self.B_real: test_B })
+
+        for i in range(num_test):
+            im_to_save_1 = np.concatenate((deprocess(test_A[i]), deprocess(B_fake[i]), deprocess(A_cyc[i])), axis=1)
+            save_img(os.path.join(test_path,"test_AB_{}".format(i)), im_to_save_1)
+            im_to_save_2 = np.concatenate((deprocess(test_B[i]), deprocess(A_fake[i]), deprocess(B_cyc[i])), axis=1)
+            save_img(os.path.join(test_path,"test_BA_{}".format(i)), im_to_save_2)
