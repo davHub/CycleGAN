@@ -109,6 +109,7 @@ def make_noisy(img, crop_size=256, blur=6, std_bright=.2):
         std_bright: std deviation of Normal distribution (0 centered) to 
     """
     img_w,img_h = img.shape[:2]
+    new_img = img
     if img_w>crop_size and img_h>crop_size:
         # Cropping data randomly
         new_h = int(np.ceil(np.random.uniform(1e-2, img_w-crop_size)))

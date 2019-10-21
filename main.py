@@ -153,7 +153,7 @@ def main(args):
     graph = tf.Graph()
     with graph.as_default():
         cycGAN = CycleGAN(img_shape=[
-                          args.fine_size, args.fine_size, 3], color_reg=args.color_reg, testing=args.testing)
+                          args.fine_size, args.fine_size, 3], color_reg=args.color_reg, testing=args.testing,norm=args.norm)
         saver = tf.train.Saver(max_to_keep=6)
 
 
