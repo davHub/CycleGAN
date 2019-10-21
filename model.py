@@ -1,5 +1,6 @@
 import tensorflow as tf
 from collections import deque
+from ops import instance_norm, batch_norm
 
 class NeuralNetwork():
     """ Define an abstract class of neural network
@@ -29,13 +30,18 @@ class PatchGAN(NeuralNetwork):
     
     The PatchGAN is an architecture built to be a good discriminator in GAN.
     """
-    def __init__(self, name="patchGAN"):
+    def __init__(self, name="patchGAN", norm="instance"):
         """ Initialize a PatchGAN class
         
         Args:
             name: the name of the NN
         """
         NeuralNetwork.__init__(self, name=name)
+        
+        if norm=="batch":
+            self.norm = batch_norm
+        else :
+            self.norm = instance_norm
 
     def C(self, inputs, k, use_bn=True, name="c"):
         """ Define the forward path in the NN
@@ -50,7 +56,7 @@ class PatchGAN(NeuralNetwork):
         with tf.variable_scope(name):
             x = tf.layers.conv2d(inputs, k, kernel_size=4, strides=(2, 2), padding="SAME", kernel_initializer=tf.truncated_normal_initializer(stddev=0.02))
             if use_bn:
-                x = tf.layers.batch_normalization(x, name='batch_norm')
+                x = self.norm(x, name='batch_norm')
             x = tf.nn.leaky_relu(x, alpha=0.2)
             return x
 
@@ -79,7 +85,7 @@ class Generator(NeuralNetwork):
     
     The generator is an architecture adopted from Johnson and al. architecture.
     """
-    def __init__(self, nb_res_block=6, name="generator", dropout=None):
+    def __init__(self, nb_res_block=6, name="generator", dropout=None, norm="instance"):
         """ Initialize a generator class
         
         Args:
@@ -90,6 +96,11 @@ class Generator(NeuralNetwork):
         NeuralNetwork.__init__(self, name=name)
         self.nb_res_block = nb_res_block
         self.dropout = dropout
+        
+        if norm=="batch":
+            self.norm = batch_norm
+        else :
+            self.norm = instance_norm
        
     # Resnet Block 
     def res_block(self, inputs, k, name="res_block", dropout=None):
@@ -103,13 +114,13 @@ class Generator(NeuralNetwork):
         with tf.variable_scope(name):
             x = tf.pad(inputs, [[0,0],[1,1],[1,1],[0,0]], "REFLECT")            
             x = tf.layers.conv2d(x, k, kernel_size=3, strides=(1, 1), padding='VALID', kernel_initializer=tf.truncated_normal_initializer(stddev=0.02), name='conv1')
-            x = tf.layers.batch_normalization(x, name="bn1")
+            x = self.norm(x, name="bn1")
             x = tf.nn.relu(x)
             if dropout is not None:
                 x = tf.nn.dropout(x, dropout)
             x = tf.pad(x, [[0,0],[1,1],[1,1],[0,0]], "REFLECT")
             x = tf.layers.conv2d(x, k, kernel_size=3, strides=(1, 1), padding='VALID', kernel_initializer=tf.truncated_normal_initializer(stddev=0.02), name='conv2')
-            x = tf.layers.batch_normalization(x, name="bn2")
+            x = self.norm(x, name="bn2")
             return (x+inputs)
 
 
@@ -126,7 +137,7 @@ class Generator(NeuralNetwork):
             x = tf.pad(inputs, [[0,0],[3,3],[3,3],[0,0]], "REFLECT")
             x = tf.layers.conv2d(x, k, kernel_size=7, strides=(1, 1), padding="VALID", kernel_initializer=tf.truncated_normal_initializer(stddev=0.02))
             if use_bn:
-                x = tf.layers.batch_normalization(x, name='batch_norm')
+                x = self.norm(x, name='batch_norm')
             x = activ(x)
             return x
 
@@ -141,7 +152,7 @@ class Generator(NeuralNetwork):
         with tf.variable_scope(name):
             x = tf.pad(inputs, [[0,0],[1,1],[1,1],[0,0]])        
             x = tf.layers.conv2d(x, k, kernel_size=3, strides=(2, 2), kernel_initializer=tf.truncated_normal_initializer(stddev=0.02))
-            x = tf.layers.batch_normalization(x, name='batch_norm')
+            x = self.norm(x, name='norm')
             return tf.nn.relu(x)
 
     # Upsampling layers
@@ -154,7 +165,7 @@ class Generator(NeuralNetwork):
         """
         with tf.variable_scope(name):
             x = tf.layers.conv2d_transpose(inputs, k, kernel_size=3, strides=(2, 2), padding='SAME', kernel_initializer=tf.truncated_normal_initializer(stddev=0.02))
-            x = tf.layers.batch_normalization(x, name='batch_norm')
+            x = self.norm(x, name='norm')
             x = tf.nn.relu(x)
             return x
 
