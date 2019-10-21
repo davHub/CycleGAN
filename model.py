@@ -1,6 +1,7 @@
 import tensorflow as tf
 from collections import deque
 from ops import instance_norm, batch_norm
+from image_buff import ImageBuffer
 
 class NeuralNetwork():
     """ Define an abstract class of neural network
@@ -203,7 +204,7 @@ class CycleGAN():
     
     The CycleGAN model is a model from the paper Unpaired Image-to-Image Translation using Cycle-Consistent Adversarial Networks.
     """
-    def __init__(self, img_shape=[128, 128, 3], learning_rate=0.0002, beta1=0.999, norm='instance', color_reg=False, testing=False):
+    def __init__(self, img_shape=[128, 128, 3], learning_rate=0.0002, beta1=0.9, norm='instance', color_reg=False, testing=False):
         """ Initialize a CycleGAN class.
         
         Args:
@@ -242,8 +243,8 @@ class CycleGAN():
         self.B_cyc = self.genA2B.forward(self.A_fake, reuse=True)
 
         if not testing:
-            self.buffer_fake_A = deque(maxlen=50)
-            self.buffer_fake_B = deque(maxlen=50)
+            self.buffer_fake_A = ImageBuffer(maxlen=50)
+            self.buffer_fake_B = ImageBuffer(maxlen=50)
             
             # Create and display discriminators
             self.dis_A = PatchGAN(norm=norm, name="disA")
