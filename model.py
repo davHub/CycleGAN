@@ -8,6 +8,8 @@ from tools import *
 from ops import instance_norm, batch_norm
 from image_buff import ImageBuffer
 
+norm_allowed=['batch', 'instance']
+
 class NeuralNetwork():
     """ Define an abstract class of neural network
     
@@ -46,8 +48,10 @@ class PatchGAN(NeuralNetwork):
         
         if norm=="batch":
             self.norm = batch_norm
-        else :
+        elif norm=="instance":
             self.norm = instance_norm
+        else:
+            raise NameError("Bacth type unknow ({})".format(norm_allowed))
 
     def C(self, inputs, k, use_bn=True, name="c"):
         """ Define the forward path in the NN
@@ -105,8 +109,10 @@ class Generator(NeuralNetwork):
         
         if norm=="batch":
             self.norm = batch_norm
-        else :
+        elif norm=="instance":
             self.norm = instance_norm
+        else:
+            raise NameError("Bacth type unknow ({})".format(norm_allowed))
        
     # Resnet Block 
     def res_block(self, inputs, k, name="res_block", dropout=None):
@@ -226,6 +232,7 @@ class CycleGAN():
         self.img_shape = img_shape
         self.lr = learning_rate
         self.beta1 = beta1
+        self.color_reg = color_reg
 
         self.A_real = tf.compat.v1.placeholder(tf.float32, shape=[None]+img_shape, name="pl_A_real")
         self.B_real = tf.compat.v1.placeholder(tf.float32, shape=[None]+img_shape, name="pl_B_real")
@@ -278,8 +285,13 @@ class CycleGAN():
             
             # Discriminator loss similar to the paper --> E_y{ (1 - D(y))^2 } + E_x{ D(G(x))^2 }
             # factor 0.5 to slow down D learning
-            self.dis_A_loss = 0.5*(adv_loss(self.dis_A_real, tf.ones_like(self.dis_A_real) + adv_loss(self.dis_A_fake_buff, tf.zeros_like(self.dis_A_fake_buff)))) #reduce_mean_squared(1.-dis_A_real) + reduce_mean_squared(dis_A_fake_buff))
-            self.dis_B_loss = 0.5*(adv_loss(self.dis_B_real, tf.ones_like(self.dis_B_real) + adv_loss(self.dis_B_fake_buff, tf.zeros_like(self.dis_B_fake_buff)))) #reduce_mean_squared(1.-dis_A_real) + reduce_mean_squared(dis_A_fake_buff))
+            self.dis_A_loss_real = adv_loss(self.dis_A_real, tf.ones_like(self.dis_A_real))
+            self.dis_A_loss_fake = adv_loss(self.dis_A_fake_buff, tf.zeros_like(self.dis_A_fake_buff))
+            self.dis_A_loss = 0.5*(self.dis_A_loss_real + self.dis_A_loss_fake) 
+            
+            self.dis_B_loss_real = adv_loss(self.dis_B_real, tf.ones_like(self.dis_B_real))
+            self.dis_B_loss_fake = adv_loss(self.dis_B_fake_buff, tf.zeros_like(self.dis_B_fake_buff))
+            self.dis_B_loss = 0.5*(self.dis_B_loss_real + self.dis_B_loss_fake)
 
             self.dis_loss = self.dis_A_loss + self.dis_B_loss
 
@@ -287,17 +299,17 @@ class CycleGAN():
             self.adv_AB_loss = adv_loss(self.dis_B_fake, tf.ones_like(self.dis_B_fake))
             self.adv_BA_loss = adv_loss(self.dis_A_fake, tf.ones_like(self.dis_A_fake))
 
-            self.adv_loss = self.adv_AB_loss + self.adv_BA_loss
+            self.adv_loss = self.lambda_adv*(self.adv_AB_loss + self.adv_BA_loss)
 
             # Cycle consistency loss
-            self.cyc_loss = abs_loss(self.B_cyc, self.B_real) + abs_loss(self.A_cyc, self.A_real)
+            self.cyc_loss = self.lambda_cyc*(abs_loss(self.B_cyc, self.B_real) + abs_loss(self.A_cyc, self.A_real))
 
-            self.gen_loss = self.lambda_adv * self.adv_loss + self.lambda_cyc*self.cyc_loss
+            self.gen_loss = self.adv_loss + self.cyc_loss
 
             # Add color regularization if needed
             if color_reg:
-                self.color_loss = abs_loss(self.A_fake, self.B_real) + abs_loss(self.B_fake, self.A_real)
-                self.gen_loss += self.lambda_color * self.color_loss
+                self.color_loss = self.lambda_color * (abs_loss(self.A_fake, self.B_real) + abs_loss(self.B_fake, self.A_real))
+                self.gen_loss += self.color_loss
 
             # We collect trainable variables
             t_vars = tf.trainable_variables()
@@ -311,6 +323,8 @@ class CycleGAN():
             # Optimizer
             self.dis_optim = tf.train.AdamOptimizer(self.lr_pl, beta1=self.beta1).minimize(self.dis_loss, var_list=self.dis_vars)
             self.gen_optim = tf.train.AdamOptimizer(self.lr_pl, beta1=self.beta1).minimize(self.gen_loss, var_list=self.gen_vars)
+            
+            self._init_summary()
         
     def decrease_lr(self, x):
         """ Decrease the learning rate
@@ -343,6 +357,9 @@ class CycleGAN():
         else:
             # saver.restore(sess, tf.train.latest_checkpoint(save_name))
             saver.restore(sess, model_path)
+            
+        # Init file writer
+        self.writer = tf.summary.FileWriter("./logs", sess.graph)
 
         # Calculate number of batches by epoch (size of batch 1 --> size min of the datasets)
         num_batches = min(len(train_data['A']), len(train_data['B']))
@@ -377,13 +394,14 @@ class CycleGAN():
                 if len(train_B.shape)<4: train_B = [train_B]
 
                 # We update generators params
-                _, gen_loss, A_fake, B_fake = sess.run([self.gen_optim, self.gen_loss, self.A_fake, self.B_fake], feed_dict={ self.A_real: train_A, self.B_real: train_B, self.lr_pl: self.lr })
-
-                # Update discriminators params
-                _, dis_loss = sess.run([self.dis_optim, self.dis_loss], feed_dict={   self.A_real: train_A, self.B_real: train_B,
+                _, gen_loss, A_fake, B_fake, sum_str = sess.run([self.gen_optim, self.gen_loss, self.A_fake, self.B_fake, self.gen_sum], feed_dict={ self.A_real: train_A, self.B_real: train_B, self.lr_pl: self.lr })
+                self.writer.add_summary(sum_str, global_step)
+                # Update discriminators params  
+                _, dis_loss, sum_str = sess.run([self.dis_optim, self.dis_loss, self.dis_sum], feed_dict={     self.A_real: train_A, self.B_real: train_B,
                                                                                         self.A_fake_buff: self.buffer_fake_A(A_fake), self.B_fake_buff: self.buffer_fake_B(B_fake),
                                                                                         self.lr_pl: self.lr})
-
+                self.writer.add_summary(sum_str, global_step)
+                
                 # Display log every 'log_freq' steps  
                 if (step+1) % log_freq == 0:
                     time_now = time.time()
@@ -431,3 +449,34 @@ class CycleGAN():
             save_img(os.path.join(test_path,"test_AB_{}".format(i)), im_to_save_1)
             im_to_save_2 = np.concatenate((deprocess(test_B[i]), deprocess(A_fake[i]), deprocess(B_cyc[i])), axis=1)
             save_img(os.path.join(test_path,"test_BA_{}".format(i)), im_to_save_2)
+
+    def _init_summary(self):
+        """ Inittialise the Tensorflow summary """
+        
+        # Summary for generator losses
+        self.gen_adv_loss_sum = tf.summary.scalar("gen_adv_loss", self.adv_loss)
+        self.gen_cycle_loss_sum = tf.summary.scalar("gen_cycle_loss", self.cyc_loss)
+        if self.color_reg:
+            self.gen_color_loss_sum = tf.summary.scalar("gen_color_loss", self.color_loss)    
+        self.gen_loss_sum = tf.summary.scalar("gen_loss", self.gen_loss)
+
+        self.gen_adv_loss_AB_sum = tf.summary.scalar("gen_adv_loss_AB", self.adv_AB_loss)
+        self.gen_adv_loss_BA_sum = tf.summary.scalar("gen_adv_loss_BA", self.adv_BA_loss)
+        self.gen_sum = tf.summary.merge(
+            [self.gen_adv_loss_sum, self.gen_adv_loss_AB_sum, self.gen_adv_loss_BA_sum, 
+             self.gen_cycle_loss_sum, self.gen_color_loss_sum, self.gen_loss_sum])
+        
+        # Summary for discriminator losses
+        self.dis_B_loss_sum = tf.summary.scalar("dis_B_loss", self.dis_B_loss)
+        self.dis_A_loss_sum = tf.summary.scalar("dis_A_loss", self.dis_A_loss)
+        self.dis_loss_sum = tf.summary.scalar("dis_loss", self.dis_loss)
+
+        self.dis_A_loss_real_sum = tf.summary.scalar("dis_A_loss_real", self.dis_A_loss_real)
+        self.dis_A_loss_fake_sum = tf.summary.scalar("dis_A_loss_fake", self.dis_A_loss_fake)
+        self.dis_B_loss_real_sum = tf.summary.scalar("dis_B_loss_real", self.dis_B_loss_real)
+        self.dis_B_loss_fake_sum = tf.summary.scalar("dis_B_loss_fake", self.dis_B_loss_fake)
+        self.dis_sum = tf.summary.merge(
+            [self.dis_A_loss_sum, self.dis_A_loss_real_sum, self.dis_A_loss_fake_sum,
+             self.dis_B_loss_sum, self.dis_B_loss_real_sum, self.dis_B_loss_fake_sum,
+             self.dis_loss_sum]
+        )

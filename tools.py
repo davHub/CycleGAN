@@ -12,7 +12,8 @@ def save_img(filename, np_array):
         filename: the file name
         np_array: the image to save
     """
-    cv2.imwrite("{}.png".format(filename), np_array)
+    # cv2.imwrite("{}.jpg".format(filename), np_array)
+    mpimg.imsave("{}.jpg".format(filename), np_array, vmin=0, vmax=255, format='jpg')
     
 def read_img(filename):
     """Read an image from a filename
