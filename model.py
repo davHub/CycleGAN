@@ -400,7 +400,7 @@ class CycleGAN():
                 _, dis_loss, sum_str = sess.run([self.dis_optim, self.dis_loss, self.dis_sum], feed_dict={     self.A_real: train_A, self.B_real: train_B,
                                                                                         self.A_fake_buff: self.buffer_fake_A(A_fake), self.B_fake_buff: self.buffer_fake_B(B_fake),
                                                                                         self.lr_pl: self.lr})
-                self.writer.add_summary(sum_str, global_step)
+                self.writer.add_summary(sum_str, step + num_batches*global_step)
                 
                 # Display log every 'log_freq' steps  
                 if (step+1) % log_freq == 0:
