@@ -215,7 +215,7 @@ class CycleGAN():
     
     The CycleGAN model is a model from the paper Unpaired Image-to-Image Translation using Cycle-Consistent Adversarial Networks.
     """
-    def __init__(self, img_shape=[128, 128, 3], learning_rate=0.0002, beta1=0.9, norm='instance', color_reg=False, testing=False, lambda_cyc=10.):
+    def __init__(self, img_shape=[128, 128, 3], learning_rate=0.0002, beta1=0.5, norm='instance', color_reg=False, testing=False, lambda_cyc=10.):
         """ Initialize a CycleGAN class.
         
         Args:
