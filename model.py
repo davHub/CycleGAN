@@ -256,8 +256,8 @@ class CycleGAN():
         self.B_cyc = self.genA2B.forward(self.A_fake, reuse=True)
 
         if not testing:
-            self.buffer_fake_A = ImageBuffer(maxlen=50)
-            self.buffer_fake_B = ImageBuffer(maxlen=50)
+            self.buffer_fake_A = ImageBuffer(maxlen=0)
+            self.buffer_fake_B = ImageBuffer(maxlen=0)
             
             # Create and display discriminators
             self.dis_A = PatchGAN(norm=norm, name="disA")
@@ -334,7 +334,7 @@ class CycleGAN():
         """
         self.lr = min(self.lr - x,0)
         
-    def train(self, sess, train_data, saver, tot_epochs=200, save_freq=10, test_freq=5, log_freq=20, save_name="model", train_path="./",t_board_path="./", model_path=None):
+    def train(self, sess, train_data, saver, batch_size = 10, tot_epochs=200, save_freq=10, test_freq=5, log_freq=20, save_name="model", train_path="./",t_board_path="./", model_path=None):
         """ Train a model
     
         Args:
@@ -362,7 +362,7 @@ class CycleGAN():
         self.writer = tf.summary.FileWriter(t_board_path, sess.graph)
 
         # Calculate number of batches by epoch (size of batch 1 --> size min of the datasets)
-        num_batches = min(len(train_data['A']), len(train_data['B']))
+        num_batches = min(len(train_data['A'])//batch_size, len(train_data['B'])//batch_size)
         if num_batches==0:
             raise ValueError()
         print("#> Number of batches {}".format(num_batches))
@@ -387,9 +387,13 @@ class CycleGAN():
 
             for step in range(num_batches):
                 # Get next batch
-                train_A = make_noisy(train_data['A'][step], crop_size=self.img_shape[0])
-                train_B = make_noisy(train_data['B'][step], crop_size=self.img_shape[0])
-
+                train_A = train_data['A'][step*batch_size:(step+1)*batch_size]
+                train_B = train_data['B'][step*batch_size:(step+1)*batch_size]
+                for i in range(len(train_A)):
+                    train_A[i] = make_noisy(train_A[i], crop_size=self.img_shape[0])
+                for i in range(len(train_B)):
+                    train_B[i] = make_noisy(train_B[i], crop_size=self.img_shape[0])
+                    
                 if len(train_A.shape)<4: train_A = [train_A]
                 if len(train_B.shape)<4: train_B = [train_B]
 
