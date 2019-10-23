@@ -433,6 +433,7 @@ class CycleGAN():
             test_path: the path to the test directory (used to print test results)
             model_path: the path to the trained model
         """
+        global_step = 0        
         saver.restore(sess, model_path)
 
         random.shuffle(test_data["A"]) 
