@@ -77,7 +77,7 @@ class PatchGAN(NeuralNetwork):
             inputs: the inputs of the block
             reuse: reuse or not the same layers parameters
         """
-        with tf.variable_scope(self.name):
+        with tf.variable_scope(self.name, reuse=reuse):
             if reuse:
                 tf.get_variable_scope().reuse_variables()
             else:
@@ -188,7 +188,7 @@ class Generator(NeuralNetwork):
             inputs: the inputs of the block
             reuse: reuse or not the same layers parameters
         """
-        with tf.variable_scope(self.name):
+        with tf.variable_scope(self.name, reuse=reuse):
             if reuse:
                 tf.get_variable_scope().reuse_variables()
             else:
@@ -359,7 +359,7 @@ class CycleGAN():
             saver.restore(sess, model_path)
             
         # Init file writer
-        self.writer = tf.summary.FileWriter("./logs", sess.graph)
+        self.writer = tf.summary.FileWriter(t_board_path, sess.graph)
 
         # Calculate number of batches by epoch (size of batch 1 --> size min of the datasets)
         num_batches = min(len(train_data['A']), len(train_data['B']))
@@ -395,7 +395,7 @@ class CycleGAN():
 
                 # We update generators params
                 _, gen_loss, A_fake, B_fake, sum_str = sess.run([self.gen_optim, self.gen_loss, self.A_fake, self.B_fake, self.gen_sum], feed_dict={ self.A_real: train_A, self.B_real: train_B, self.lr_pl: self.lr })
-                self.writer.add_summary(sum_str, global_step)
+                self.writer.add_summary(sum_str, step + num_batches*global_step)
                 # Update discriminators params  
                 _, dis_loss, sum_str = sess.run([self.dis_optim, self.dis_loss, self.dis_sum], feed_dict={     self.A_real: train_A, self.B_real: train_B,
                                                                                         self.A_fake_buff: self.buffer_fake_A(A_fake), self.B_fake_buff: self.buffer_fake_B(B_fake),
