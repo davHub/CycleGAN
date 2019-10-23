@@ -456,15 +456,19 @@ class CycleGAN():
         # Summary for generator losses
         self.gen_adv_loss_sum = tf.summary.scalar("gen_adv_loss", self.adv_loss)
         self.gen_cycle_loss_sum = tf.summary.scalar("gen_cycle_loss", self.cyc_loss)
-        if self.color_reg:
-            self.gen_color_loss_sum = tf.summary.scalar("gen_color_loss", self.color_loss)    
         self.gen_loss_sum = tf.summary.scalar("gen_loss", self.gen_loss)
 
         self.gen_adv_loss_AB_sum = tf.summary.scalar("gen_adv_loss_AB", self.adv_AB_loss)
         self.gen_adv_loss_BA_sum = tf.summary.scalar("gen_adv_loss_BA", self.adv_BA_loss)
-        self.gen_sum = tf.summary.merge(
-            [self.gen_adv_loss_sum, self.gen_adv_loss_AB_sum, self.gen_adv_loss_BA_sum, 
-             self.gen_cycle_loss_sum, self.gen_color_loss_sum, self.gen_loss_sum])
+        
+        sum_tmp = [self.gen_adv_loss_sum, self.gen_adv_loss_AB_sum, self.gen_adv_loss_BA_sum, 
+                   self.gen_cycle_loss_sum, self.gen_loss_sum]
+        if self.color_reg:
+            self.gen_color_loss_sum = tf.summary.scalar("gen_color_loss", self.color_loss)    
+            sum_tmp + self.gen_color_loss_sum
+            
+        self.gen_sum = tf.summary.merge(sum_tmp
+            )
         
         # Summary for discriminator losses
         self.dis_B_loss_sum = tf.summary.scalar("dis_B_loss", self.dis_B_loss)
