@@ -22,7 +22,7 @@ def main(args):
     graph = tf.Graph()
     with graph.as_default():
         cycGAN = CycleGAN(img_shape=[
-                          args.fine_size, args.fine_size, 3], color_reg=args.color_reg, testing=args.testing,norm=args.norm)
+                          args.fine_size, args.fine_size, 3], color_reg=args.color_reg, testing=args.testing, norm=args.norm,lambda_cyc=args.lambda_cyc)
         saver = tf.train.Saver(max_to_keep=6)
 
 
@@ -49,7 +49,7 @@ def main(args):
         # Start training
         with tf.Session(graph=graph) as sess:
             print("#> Training model")
-            cycGAN.train(sess, data, saver, tot_epochs=args.nb_epochs,
+            cycGAN.train(sess, data, saver, tot_epochs=args.nb_epochs, 
                          save_freq=args.save_freq, test_freq=args.test_freq, log_freq=args.log_freq,
                          save_name=save_name, train_path=train_path, t_board_path=t_board_path, model_path=restore_name)
 
@@ -86,6 +86,7 @@ if __name__ == "__main__":
     parser.add_argument('--restore', dest='restore', default=None, help='Model to restore')
     # Params to change training parameters
     parser.add_argument('-e', '--nb_epochs', dest='nb_epochs', type=int, default=200, help='Nb epochs for training')
+    parser.add_argument('--lambda_cyc', dest='lambda_cyc', type=float, default=10., help='Lambda cycle loss')
     parser.add_argument('-n', '--norm', dest='norm', default='instance', help='Normalization to use')
     parser.add_argument('--fine_size', dest='fine_size', type=int, default=256, help="Dimension of the data")
     parser.add_argument('--load_size', dest='load_size', type=int, default=286, help="Dimension of the data before cropping")
