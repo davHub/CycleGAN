@@ -394,8 +394,8 @@ class CycleGAN():
                 for i in range(len(train_B)):
                     train_B[i] = make_noisy(train_B[i], crop_size=self.img_shape[0])
                     
-                if len(train_A.shape)<4: train_A = [train_A]
-                if len(train_B.shape)<4: train_B = [train_B]
+                if len(train_A.asarray().shape)<4: train_A = [train_A]
+                if len(train_B.asarray().shape)<4: train_B = [train_B]
 
                 # We update generators params
                 _, gen_loss, A_fake, B_fake, sum_str = sess.run([self.gen_optim, self.gen_loss, self.A_fake, self.B_fake, self.gen_sum], feed_dict={ self.A_real: train_A, self.B_real: train_B, self.lr_pl: self.lr })
