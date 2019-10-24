@@ -456,7 +456,7 @@ class CycleGAN():
             save_img(os.path.join(test_path,"test_BA_{}".format(i)), im_to_save_2)
 
     def _init_summary(self):
-        """ Inittialise the Tensorflow summary """
+        """ Initialise the Tensorflow summary """
         
         # Summary for generator losses
         self.gen_adv_loss_sum = tf.summary.scalar("gen_adv_loss", self.adv_loss)
@@ -470,10 +470,9 @@ class CycleGAN():
                    self.gen_cycle_loss_sum, self.gen_loss_sum]
         if self.color_reg:
             self.gen_color_loss_sum = tf.summary.scalar("gen_color_loss", self.color_loss)    
-            sum_tmp + self.gen_color_loss_sum
+            sum_tmp = sum_tmp + [self.gen_color_loss_sum]
             
-        self.gen_sum = tf.summary.merge(sum_tmp
-            )
+        self.gen_sum = tf.summary.merge(sum_tmp)
         
         # Summary for discriminator losses
         self.dis_B_loss_sum = tf.summary.scalar("dis_B_loss", self.dis_B_loss)
