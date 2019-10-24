@@ -64,7 +64,7 @@ class PatchGAN(NeuralNetwork):
             name: the name of the block            
         """
         with tf.variable_scope(name):
-            x = tf.layers.conv2d(inputs, k, kernel_size=4, strides=(2, 2), padding="SAME", kernel_initializer=tf.truncated_normal_initializer(stddev=0.02))
+            x = tf.layers.conv2d(inputs, k, kernel_size=4, strides=(2, 2), padding="SAME", kernel_initializer=tf.truncated_normal_initializer(stddev=0.02), bias_initializer=None)
             if use_bn:
                 x = self.norm(x, name='batch_norm')
             x = tf.nn.leaky_relu(x, alpha=0.2)
@@ -87,7 +87,7 @@ class PatchGAN(NeuralNetwork):
             x = self.C(x, 128, name="c2")
             x = self.C(x, 256, name="c3")
             x = self.C(x, 512, name="c4")
-            x = tf.layers.conv2d(x, 1, kernel_size=4, strides=(1, 1), padding="SAME", kernel_initializer=tf.truncated_normal_initializer(stddev=0.02), name="conv_out")
+            x = tf.layers.conv2d(x, 1, kernel_size=4, strides=(1, 1), padding="SAME", kernel_initializer=tf.truncated_normal_initializer(stddev=0.02), bias_initializer=None, name="conv_out")
             return x
 
 class Generator(NeuralNetwork):
@@ -125,13 +125,13 @@ class Generator(NeuralNetwork):
         """
         with tf.variable_scope(name):
             x = tf.pad(inputs, [[0,0],[1,1],[1,1],[0,0]], "REFLECT")            
-            x = tf.layers.conv2d(x, k, kernel_size=3, strides=(1, 1), padding='VALID', kernel_initializer=tf.truncated_normal_initializer(stddev=0.02), name='conv1')
+            x = tf.layers.conv2d(x, k, kernel_size=3, strides=(1, 1), padding='VALID', kernel_initializer=tf.truncated_normal_initializer(stddev=0.02), bias_initializer=None, name='conv1')
             x = self.norm(x, name="bn1")
             x = tf.nn.relu(x)
             if dropout is not None:
                 x = tf.nn.dropout(x, dropout)
             x = tf.pad(x, [[0,0],[1,1],[1,1],[0,0]], "REFLECT")
-            x = tf.layers.conv2d(x, k, kernel_size=3, strides=(1, 1), padding='VALID', kernel_initializer=tf.truncated_normal_initializer(stddev=0.02), name='conv2')
+            x = tf.layers.conv2d(x, k, kernel_size=3, strides=(1, 1), padding='VALID', kernel_initializer=tf.truncated_normal_initializer(stddev=0.02), bias_initializer=None, name='conv2')
             x = self.norm(x, name="bn2")
             return (x+inputs)
 
@@ -147,7 +147,7 @@ class Generator(NeuralNetwork):
         """
         with tf.variable_scope(name):
             x = tf.pad(inputs, [[0,0],[3,3],[3,3],[0,0]], "REFLECT")
-            x = tf.layers.conv2d(x, k, kernel_size=7, strides=(1, 1), padding="VALID", kernel_initializer=tf.truncated_normal_initializer(stddev=0.02))
+            x = tf.layers.conv2d(x, k, kernel_size=7, strides=(1, 1), padding="VALID", kernel_initializer=tf.truncated_normal_initializer(stddev=0.02), bias_initializer=None)
             if use_bn:
                 x = self.norm(x, name='batch_norm')
             x = activ(x)
@@ -163,7 +163,7 @@ class Generator(NeuralNetwork):
         """
         with tf.variable_scope(name):
             x = tf.pad(inputs, [[0,0],[1,1],[1,1],[0,0]])        
-            x = tf.layers.conv2d(x, k, kernel_size=3, strides=(2, 2), kernel_initializer=tf.truncated_normal_initializer(stddev=0.02))
+            x = tf.layers.conv2d(x, k, kernel_size=3, strides=(2, 2), kernel_initializer=tf.truncated_normal_initializer(stddev=0.02), bias_initializer=None)
             x = self.norm(x, name='norm')
             return tf.nn.relu(x)
 
@@ -176,7 +176,7 @@ class Generator(NeuralNetwork):
             k: the number of filters
         """
         with tf.variable_scope(name):
-            x = tf.layers.conv2d_transpose(inputs, k, kernel_size=3, strides=(2, 2), padding='SAME', kernel_initializer=tf.truncated_normal_initializer(stddev=0.02))
+            x = tf.layers.conv2d_transpose(inputs, k, kernel_size=3, strides=(2, 2), padding='SAME', kernel_initializer=tf.truncated_normal_initializer(stddev=0.02), bias_initializer=None)
             x = self.norm(x, name='norm')
             x = tf.nn.relu(x)
             return x
