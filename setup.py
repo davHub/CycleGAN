@@ -7,5 +7,5 @@ setup(name='CycleGAN',
     description='Cycle GAN tools',
     author='David ALBERT',
     author_email='david.albert@insa-rouen.fr',
-    install_requires=['tensorflow==1.14.0', 'numpy', 'opencv-python', 'matplotlib'],
+    install_requires=['tensorflow==1.15.4', 'numpy', 'opencv-python', 'matplotlib'],
 )
